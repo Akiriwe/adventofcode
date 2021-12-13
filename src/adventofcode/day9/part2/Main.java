@@ -4,10 +4,14 @@ import adventofcode.day9.part2.basins.Basin;
 import adventofcode.day9.part2.basins.BasinBuffer;
 import adventofcode.day9.part2.basins.BasinSector;
 import adventofcode.util.FileUtils;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
     private static final String FILE_PATH = "E:\\13 - Projects\\Java\\untitled\\src\\adventofcode\\day9\\input.txt";
@@ -25,88 +29,64 @@ public class Main {
                 }
 
                 if (!line.isEmpty() && (ENTRIES.get(i).get(j) == 9 || j == ENTRIES.get(i).size() - 1)) {
-                    System.out.println("checking " + line);
-                    boolean addedToExistingBasin = checkBasins(line);
-                    boolean newBasinCreated = !addedToExistingBasin && checkBufferedBasins(line);
+                    String msg = "checking " + line;
+                    //checking [BasinSector{i=2, j=18, height=8}, BasinSector{i=2, j=19, height=7}, BasinSector{i=2, j=20, height=8}, BasinSector{i=2, j=21, height=6}, BasinSector{i=2, j=22, height=7}, BasinSector{i=2, j=23, height=6}, BasinSector{i=2, j=24, height=7}]
+                    System.out.println(msg);
 
-                    if (!newBasinCreated && !addedToExistingBasin) {
-                        BUFFER.add(new BasinBuffer(line));
-                    }
-
+                    BUFFER.add(new BasinBuffer(line));
                     line = new ArrayList<>();
                 }
             }
+
+            checkBasins();
+
+            for (BasinBuffer buffer : BUFFER) {
+                BASINS.add(new Basin(buffer.getSectors()));
+            }
+
+            BUFFER.clear();
+
+            BASINS.forEach(System.out::println);
+            System.out.println();
         }
 
         for (BasinBuffer buffer : BUFFER) {
             BASINS.add(new Basin(buffer.getSectors()));
         }
 
-        System.out.println(BUFFER.size());
         StringBuilder basingSizes = new StringBuilder();
         BASINS.sort(Collections.reverseOrder());
         BASINS.forEach(basin -> basingSizes.append(basin.getSectors().size()).append(" "));
         System.out.println(basingSizes);
+        System.out.println(BASINS);
+
         System.out.println(BASINS.get(0).getSectors().size() *
                 BASINS.get(1).getSectors().size() *
                 BASINS.get(2).getSectors().size());
     }
 
-    private static boolean checkBasins(List<BasinSector> line) {
-        boolean addedToExistingBasin = false;
+    private static void checkBasins() {
+        List<Pair<Basin, List<BasinSector>>> sectorsToAdd = new ArrayList<>();
 
         for (Basin basin : BASINS) {
             for (BasinSector basinSector : basin.getSectors()) {
-                for (BasinSector lineSector : line) {
-                    if (basinSector.getJ() == lineSector.getJ() &&
-                            Math.abs(basinSector.getI() - lineSector.getI()) == 1) {
-                        basin.addAll(line);
-                        addedToExistingBasin = true;
-                        break;
-                    }
-                }
-
-                if (addedToExistingBasin) {
-                    break;
-                }
-            }
-
-            if (addedToExistingBasin) {
-                break;
-            }
-        }
-
-        return addedToExistingBasin;
-    }
-
-    private static boolean checkBufferedBasins(List<BasinSector> line) {
-        boolean newBasinCreated = false;
-        Basin potentialBasin = null;
-
-        for (BasinSector basinCandidate : line) {
-            for (int iBuffer = 0; iBuffer < BUFFER.size(); ++iBuffer) {
-                List<BasinSector> bufferedLine = BUFFER.get(iBuffer).getSectors();
-                for (BasinSector bufferedSector : bufferedLine) {
-                    if (bufferedSector.getJ() == basinCandidate.getJ() &&
-                            Math.abs(bufferedSector.getI() - basinCandidate.getI()) == 1) {
-                        if (!newBasinCreated) {
-                            potentialBasin = new Basin(new ArrayList<>(line));
-                            newBasinCreated = true;
+                for (Iterator<BasinBuffer> bufferIterator = BUFFER.iterator(); bufferIterator.hasNext(); ) {
+                    BasinBuffer basinBuffer = bufferIterator.next();
+                    List<BasinSector> sectors = basinBuffer.getSectors();
+                    for (BasinSector bufferSector : sectors) {
+                        if (basinSector.getJ() == bufferSector.getJ() &&
+                                Math.abs(basinSector.getI() - bufferSector.getI()) == 1) {
+                            sectorsToAdd.add(new Pair<>(basin, sectors));
+                            bufferIterator.remove();
+                            break;
                         }
-
-                        potentialBasin.addAll(bufferedLine);
-                        BUFFER.remove(iBuffer);
-                        --iBuffer;
                     }
                 }
             }
-
         }
 
-        if (newBasinCreated) {
-            BASINS.add(potentialBasin);
-        }
-
-        return newBasinCreated;
+        System.out.println("BASINS TO ENHANCE");
+        sectorsToAdd.forEach(pair -> System.out.println(pair.getKey() + " : " + pair.getValue()));
+        sectorsToAdd.forEach(pair -> pair.getKey().addAll(pair.getValue()));
     }
 }

@@ -26,4 +26,12 @@ public class BasinBuffer {
     public int hashCode() {
         return Objects.hash(sectors);
     }
+
+    @Override
+    public String
+    toString() {
+        return "BasinBuffer{" +
+                "sectors=" + sectors +
+                '}';
+    }
 }
